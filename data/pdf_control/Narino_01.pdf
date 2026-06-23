@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script src="/assets/js/init-config.js" nonce="nonce-random7f22b2eed03f59b9168842f93570f7f56beea7f971d17ff3c3394aa26e6536e2"></script>
+  <meta charset="utf-8">
+  <title>E14VisorCiudadano</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- <script>
+    var global = global || window
+  </script> -->
+<link rel="stylesheet" href="styles-3DUAMZUT.css"></head>
+<body>
+  <app-root ngcspnonce="nonce-random7f22b2eed03f59b9168842f93570f7f56beea7f971d17ff3c3394aa26e6536e2"></app-root>
+<link rel="modulepreload" href="chunk-VIZAW5N2.js"><link rel="modulepreload" href="chunk-FQ7EQ2J4.js"><link rel="modulepreload" href="chunk-HH2WTORV.js"><script src="polyfills-FFHMD2TL.js" type="module" nonce="nonce-random7f22b2eed03f59b9168842f93570f7f56beea7f971d17ff3c3394aa26e6536e2"></script><script src="main-AGQPPFG5.js" type="module" nonce="nonce-random7f22b2eed03f59b9168842f93570f7f56beea7f971d17ff3c3394aa26e6536e2"></script></body>
+</html>
