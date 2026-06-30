@@ -1,0 +1,32 @@
+# Core
+fastapi
+uvicorn
+python-dotenv
+
+# PDF
+PyMuPDF
+
+# Vision
+opencv-python-headless
+numpy
+
+# OCR
+pytesseract
+
+# AI (NVIDIA NIM)
+openai
+
+# HTTP
+curl-cffi
+httpx
+
+# DB prod
+psycopg2-binary
+sqlalchemy
+
+# Queue prod
+celery
+redis
+
+# Storage prod
+boto3
