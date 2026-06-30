@@ -1,0 +1,354 @@
+"""
+Dashboard E14 Audit Platform — Vista autónoma HTML+JS.
+"""
+HTML = """<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E14 Audit Platform — Dashboard</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --border: #2a2d37;
+  --text: #e1e4ed;
+  --muted: #6b7280;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --accent: #8b5cf6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+header { 
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+}
+header h1 { font-size: 1.5rem; font-weight: 600; }
+header .badge { 
+  background: var(--accent); color: white; padding: 4px 12px; 
+  border-radius: 20px; font-size: 0.75rem; font-weight: 500;
+}
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { 
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; 
+  padding: 20px; text-align: center;
+}
+.stat-card .value { font-size: 2rem; font-weight: 700; }
+.stat-card .label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+.stat-card.total .value { color: var(--blue); }
+.stat-card.legitimas .value { color: var(--green); }
+.stat-card.sospechosas .value { color: var(--yellow); }
+.stat-card.ilegitimas .value { color: var(--red); }
+.stat-card.pendientes .value { color: var(--muted); }
+
+.upload-section {
+  background: var(--card); border: 2px dashed var(--border); border-radius: 12px;
+  padding: 32px; text-align: center; margin-bottom: 24px;
+}
+.upload-section:hover { border-color: var(--accent); }
+.upload-section input[type="file"] { display: none; }
+.upload-section label { 
+  cursor: pointer; padding: 12px 32px; background: var(--accent); 
+  color: white; border-radius: 8px; font-weight: 500; transition: opacity 0.2s;
+}
+.upload-section label:hover { opacity: 0.9; }
+.upload-section .status { margin-top: 12px; font-size: 0.85rem; color: var(--muted); }
+
+.table-container { 
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; 
+}
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+th { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+tr:hover { background: rgba(255,255,255,0.02); }
+.veredicto { 
+  padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; 
+}
+.veredicto.LEGITIMA { background: rgba(34,197,94,0.15); color: var(--green); }
+.veredicto.SOSPECHOSA { background: rgba(234,179,8,0.15); color: var(--yellow); }
+.veredicto.ILEGITIMA { background: rgba(239,68,68,0.15); color: var(--red); }
+.veredicto.PENDIENTE { background: rgba(107,114,128,0.15); color: var(--muted); }
+.score-bar {
+  width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+}
+.score-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.score-fill.low { background: var(--green); }
+.score-fill.medium { background: var(--yellow); }
+.score-fill.high { background: var(--red); }
+
+.detail-view { 
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; 
+  padding: 24px; margin-top: 24px; display: none;
+}
+.detail-view.active { display: block; }
+.cells-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+.cell-card { 
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; 
+  text-align: center;
+}
+.cell-card img { max-width: 100%; max-height: 120px; border-radius: 4px; }
+.cell-card .scores { font-size: 0.7rem; color: var(--muted); margin-top: 8px; }
+.cell-card .scores span { display: block; }
+.btn {
+  background: var(--accent); color: white; border: none; border-radius: 6px;
+  padding: 6px 14px; cursor: pointer; font-size: 0.8rem; margin: 2px;
+}
+.btn-close { background: var(--border); color: var(--text); }
+.empty-state { text-align: center; padding: 48px; color: var(--muted); }
+.loading { opacity: 0.5; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>E14 Audit Platform</h1>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" style="background:var(--blue)" onclick="batchProcess()">📦 Procesar Lote</button>
+      <button class="btn" style="background:var(--muted)" onclick="exportData('json')">📥 JSON</button>
+      <button class="btn" style="background:var(--muted)" onclick="exportData('csv')">📊 CSV</button>
+      <span class="badge">MVC v2.1</span>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats" id="stats"></div>
+
+  <!-- Upload -->
+  <div class="upload-section">
+    <input type="file" id="fileInput" accept=".pdf" />
+    <label for="fileInput">📄 Subir y analizar E-14 PDF</label>
+    <div class="status" id="uploadStatus"></div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Mesa Key</th><th>Archivo</th>
+          <th>Score</th><th>Celdas</th><th>Veredicto</th>
+          <th>Fecha</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="actasTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Detail -->
+  <div class="detail-view" id="detailView">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 id="detailTitle">Detalle del Acta</h3>
+      <button class="btn btn-close" onclick="closeDetail()">✕ Cerrar</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8700';
+
+async function load() {
+  await loadStats();
+  await loadActas();
+}
+
+async function loadStats() {
+  try {
+    const r = await fetch(API + '/dashboard/stats');
+    const s = await r.json();
+    document.getElementById('stats').innerHTML = `
+      <div class="stat-card total"><div class="value">${s.total}</div><div class="label">Total Actas</div></div>
+      <div class="stat-card legitimas"><div class="value">${s.legitimas}</div><div class="label">Legítimas</div></div>
+      <div class="stat-card sospechosas"><div class="value">${s.sospechosas}</div><div class="label">Sospechosas</div></div>
+      <div class="stat-card ilegitimas"><div class="value">${s.ilegitimas}</div><div class="label">Ilegítimas</div></div>
+      <div class="stat-card pendientes"><div class="value">${s.pendientes}</div><div class="label">Pendientes</div></div>
+    `;
+  } catch(e) { console.error('Stats error:', e); }
+}
+
+async function loadActas() {
+  try {
+    const r = await fetch(API + '/actas?limit=100');
+    const data = await r.json();
+    const tbody = document.getElementById('actasTable');
+    
+    if (!data.data || data.data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No hay actas analizadas aún. ¡Sube un PDF!</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.data.map(a => {
+      const scoreClass = a.score_global < 0.30 ? 'low' : a.score_global < 0.60 ? 'medium' : 'high';
+      const scorePct = Math.round(a.score_global * 100);
+      return `
+        <tr>
+          <td>#${a.id}</td>
+          <td><code>${a.mesa_key || '-'}</code></td>
+          <td>${a.filename || '-'}</td>
+          <td>
+            <div style="font-size:0.8rem;margin-bottom:2px">${scorePct}%</div>
+            <div class="score-bar"><div class="score-fill ${scoreClass}" style="width:${scorePct}%"></div></div>
+          </td>
+          <td>${a.celdas_sospechosas || 0}/${a.total_celdas || 0}</td>
+          <td><span class="veredicto ${a.veredicto}">${a.veredicto}</span></td>
+          <td style="font-size:0.75rem;color:var(--muted)">${(a.fecha_analisis||'').slice(0,10)}</td>
+          <td>
+            <button class="btn" onclick="viewDetail(${a.id})">Ver</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch(e) { console.error('Actas error:', e); }
+}
+
+async function viewDetail(id) {
+  try {
+    const r = await fetch(API + '/actas/' + id);
+    const acta = await r.json();
+    const cellsR = await fetch(API + '/celdas/' + id);
+    const cellsData = await cellsR.json();
+    
+    document.getElementById('detailTitle').textContent = `Acta #${id} — ${acta.veredicto}`;
+    
+    const cells = cellsData.cells || [];
+    const cellsHtml = cells.length > 0 ? `
+      <h4 style="margin-top:16px">Celdas de Votación (${cells.length})</h4>
+      <div class="cells-grid">
+        ${cells.map(c => `
+          <div class="cell-card">
+            ${c.image_base64 ? `<img src="data:image/png;base64,${c.image_base64}" alt="Celda ${c.idx}">` : ''}
+            <div class="scores">
+              <span><strong>Celda #${c.idx}</strong></span>
+              <span>Grosor: ${(c.scores?.score_grosor||0).toFixed(2)}</span>
+              <span>Separador: ${(c.scores?.score_separador||0).toFixed(2)}</span>
+              <span>Tinta: ${(c.scores?.score_tinta||0).toFixed(2)}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : '<p style="color:var(--muted)">Sin celdas disponibles</p>';
+
+    document.getElementById('detailContent').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <p><strong>Mesa Key:</strong> <code>${acta.mesa_key || '-'}</code></p>
+          <p><strong>Archivo:</strong> ${acta.filename || '-'}</p>
+          <p><strong>Score Global:</strong> ${(acta.score_global*100).toFixed(0)}%</p>
+          <p><strong>Celdas sospechosas:</strong> ${acta.celdas_sospechosas || 0} / ${acta.total_celdas || 0}</p>
+          <p><strong>Fecha análisis:</strong> ${acta.fecha_analisis || '-'}</p>
+        </div>
+        <div>
+          <p><strong>Veredicto actual:</strong> <span class="veredicto ${acta.veredicto}">${acta.veredicto}</span></p>
+          <div style="margin-top:12px">
+            <button class="btn" style="background:var(--green)" onclick="setVeredicto(${id},'LEGITIMA')">✓ Legítima</button>
+            <button class="btn" style="background:var(--yellow)" onclick="setVeredicto(${id},'SOSPECHOSA')">⚠ Sospechosa</button>
+            <button class="btn" style="background:var(--red)" onclick="setVeredicto(${id},'ILEGITIMA')">✕ Ilegítima</button>
+            <button class="btn" style="background:var(--blue)" onclick="analyzeVlm(${id})">🤖 VLM</button>
+          </div>
+          <div id="vlmResult_${id}" style="margin-top:8px;font-size:0.8rem"></div>
+        </div>
+      </div>
+      ${cellsHtml}
+    `;
+    
+    document.getElementById('detailView').classList.add('active');
+    document.getElementById('detailView').scrollIntoView({behavior:'smooth'});
+  } catch(e) { console.error('Detail error:', e); }
+}
+
+async function setVeredicto(id, v) {
+  try {
+    await fetch(API + '/actas/' + id + '/veredicto?veredicto=' + v, {method:'PUT'});
+    closeDetail();
+    load();
+  } catch(e) { console.error('Veredicto error:', e); }
+}
+
+async function batchProcess() {
+  const status = document.getElementById('uploadStatus');
+  status.textContent = '⏳ Procesando lote de PDFs en pdf_control/...';
+  try {
+    const r = await fetch(API + '/actas/analizar-lote', {method:'POST'});
+    const result = await r.json();
+    status.innerHTML = `✅ Lote procesado: ${result.procesados} nuevos (${result.errores} errores)`;
+    load();
+  } catch(e) {
+    status.textContent = '❌ Error: ' + e.message;
+  }
+  setTimeout(() => { status.textContent = ''; }, 8000);
+}
+
+function exportData(format) {
+  window.open(API + '/exportar/actas?formato=' + format, '_blank');
+}
+
+async function analyzeVlm(id) {
+  const el = document.getElementById('vlmResult_' + id);
+  if (!el) return;
+  el.innerHTML = '⏳ Analizando con VLM...';
+  try {
+    const r = await fetch(API + '/actas/' + id + '/analizar-vlm', {method:'POST'});
+    const result = await r.json();
+    if (result.resultados && result.resultados.length > 0) {
+      el.innerHTML = result.resultados.map(r => 
+        `<div style="margin:4px 0;padding:6px;background:var(--bg);border-radius:4px">
+          Celda #${r.cell_index}: ${r.digit_detected || '?'} 
+          (conf: ${(r.confidence*100).toFixed(0)}%)
+          ${r.anomalies?.length ? '⚠ ' + r.anomalies.join(', ') : ''}
+        </div>`
+      ).join('');
+    } else {
+      el.innerHTML = '✅ VLM completado. Sin resultados destacables.';
+    }
+  } catch(e) {
+    el.innerHTML = '❌ Error VLM: ' + e.message;
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detailView').classList.remove('active');
+}
+
+// Upload handler
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const status = document.getElementById('uploadStatus');
+  status.textContent = '⏳ Analizando ' + file.name + '...';
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const r = await fetch(API + '/actas/analizar', {method:'POST', body: formData});
+    const result = await r.json();
+    
+    if (r.ok) {
+      status.innerHTML = '✅ ¡Analizado! Veredicto: <b>' + result.veredicto + '</b>';
+      load();
+    } else {
+      status.textContent = '❌ Error: ' + (result.detail || 'Desconocido');
+    }
+  } catch(e) {
+    status.textContent = '❌ Error de conexión: ' + e.message;
+  }
+  
+  setTimeout(() => { status.textContent = ''; }, 5000);
+});
+
+load();
+</script>
+</body>
+</html>"""
+
+
+def get_html() -> str:
+    return HTML
