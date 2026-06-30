@@ -2,7 +2,7 @@
 
 ### Estado actual de conexión
 ✅ Supabase API conectado exitosamente
-✅ Service role key funciona (`REDACTED_SERVICE_KEY`)
+✅ Service role key funciona (`REDACTED_SERVICE_KEY
 ❌ Tabla existente (`E-14`) solo tiene `id` — necesitamos el esquema completo
 
 ### Próximo paso: Crear esquema completo en Supabase

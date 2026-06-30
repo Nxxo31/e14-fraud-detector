@@ -44,9 +44,6 @@ Para avanzar a Fase 5 (VLM NIM) necesitamos calibrar las coordenadas exactas de 
 
 ## Tokens Supabase (guardados en memoria segura)
 
-- `REDACTED_ANON_KEY` — anon key (API pública)
-- `REDACTED_SERVICE_KEY` — service_role key (admin)
-- `REDACTED_PROJECT_TOKEN` — project token (MCP/CLI)
 
 ## Archivos clave creados/modificados
 
