@@ -1,1 +1,25 @@
 __pycache__/
+*.pyc
+.env
+.venv/
+venv/
+node_modules/
+
+# Data directories (large binary/generated files)
+data/pdf_control/*.pdf
+data/pdf_adicionales/
+data/output/
+data/uploads/
+data/ocr_testdata/
+data/benchmark/
+data/vlm_test/
+data/analisis_adicionales/
+data/analisis_integrado/
+data/firmas/
+data/resultados_fraude/
+_legacy/
+
+# Generated files
+docs/
+*.log
+*.tmp
