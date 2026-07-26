@@ -29,6 +29,6 @@ Procesa PDFs de muestra (5-18 actas). Repo de escala: e14-auditoria (122k actas)
 - Credenciales Supabase SOLO en variables de entorno — nunca en archivos .md
 
 ## Loop de trabajo
-1. `cat CURRENT_TASK.md` → ejecutar tarea
+1. `cat PROJECT.md` → verificar fase activa
 2. Activar venv: `source venv/bin/activate`
 3. Commit atómico en español → push inmediato

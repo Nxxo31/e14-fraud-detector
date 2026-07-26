@@ -115,3 +115,11 @@ Para avanzar a Fase 5 (VLM NIM) necesitamos calibrar las coordenadas exactas de 
 ---
 
 *Nota: Para actualizar estado operativo, editar esta sección de PROJECT.md directamente.*
+
+---
+
+## Cross-References (Sister Project)
+
+- **Repo de escala (122K actas):** `../e14-auditoria/` — implementación de producción a escala completa.
+- **Infraestructura de producción (PostgreSQL, Redis, MinIO, Celery):** La arquitectura de la capa de adquisición se ha trasladada a `../e14-auditoria/docs/acquisition-architecture.md` (importado desde `acquisition/ARCHITECTURE.md`). Este repositorio de prototipo concentra resultados de las fases F1-F4 (DB, aritmética, workers, OpenCV) y conserva su propia versión para referencia histórica.
+- **Blueprint completo de implementación:** `../e14-auditoria/docs/archive/MVP-IMPLEMENTATION-BLUEPRINT.md` (archivado; secciones únicas fusionadas en `../e14-auditoria/PROJECT.md`).
