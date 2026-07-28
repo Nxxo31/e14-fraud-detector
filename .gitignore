@@ -24,3 +24,6 @@ _legacy/
 docs/
 *.log
 *.tmp
+
+# SQLite databases (regenerated locally, not version-controlled)
+*.db
