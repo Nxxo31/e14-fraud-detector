@@ -1,90 +1,63 @@
-# E14 Audit Platform — Auditoría Ciudadana de Actas E-14 (Colombia)
+# E-14 — Auditoría Ciudadana de Actas E-14 (Colombia)
 
-**Última actualización:** 2026-06-22
-**Sprint:** Fases 1-10 implementación completa
-
-## Estado actual
-
-| Fase | Estado | Fecha |
-|------|--------|-------|
-| F1 — Fundamentos de datos | ✅ Completado | 2026-06-22 |
-| F2 — Capa 0 | 🔄 En progreso | |
-| F3 — Cola de slots | ⬜ Pendiente | |
-| F4 — Capa 1 (OpenCV) | ⬜ Pendiente | |
-| F5 — Capa 2 (VLM NIM) | ⬜ Pendiente | |
-| F6 — Ingesta ciudadana | ⬜ Pendiente | |
-| F7 — Motor comparación | ⬜ Pendiente | |
-| F8 — Flujo verificación | ⬜ Pendiente | |
-| F9 — Dashboard público | ⬜ Pendiente | |
-| F10 — Panel admin | ⬜ Pendiente | |
-
-## Tech Stack (definitivo)
-
-| Capa | Tecnología | Estado |
-|---|---|---|
-| Base de datos | SQLite (dev) → PostgreSQL (prod) | ✅ SQLite operativo |
-| Parser PDF | PyMuPDF (fitz) | ✅ MVP existente |
-| QR/Barcode | pyzbar | ⬜ Pendiente |
-| Visión (Capa 1) | OpenCV | ⬜ Pendiente |
-| VLM (Capa 2) | Hermes Agent + NIM | ⬜ Pendiente |
-| Frontend | — | ⬜ Pendiente |
-| Dashboard mapa | — | ⬜ Pendiente |
-
-## Datos de muestra
-
-5 PDFs E-14 en `data/pdf_muestra/`:
-
-| Archivo | Mesa | Municipio | Tamaño |
-|---------|------|-----------|--------|
-| Anza.pdf | 01-034-01-001-000 | Anzá | 47 KB |
-| Turbo_015.pdf | 01-280-00-000-015 | Turbo | 59 KB |
-| Turbo_001.pdf | 01-280-00-000-001 | Turbo | 56 KB |
-| Turbo_002.pdf | 01-280-00-000-002 | Turbo | 60 KB |
-| Turbo_006.pdf | 01-280-00-000-006 | Turbo | 57 KB |
-
-## Archivos clave
-
-- `schema_sqlite.sql` — Esquema SQLite adaptado de PostgreSQL
-- `data/e14_audit.db` — Base de datos SQLite (5 actas insertadas)
-- `data/pdf_muestra/` — 5 PDFs E-14 de muestra
-- `create_db.py` — Script para crear la base de datos
-- `seed_data.py` — Script para poblar datos de muestra
-
-## Decisiones de diseño
-
-1. **SQLite en lugar de PostgreSQL** — No se pudo instalar PostgreSQL (requiere sudo). Se adaptó el schema con tipos SQLite (INTEGER para booleanos, TEXT para UUIDs y timestamps, REAL para floats). Los triggers de PostgreSQL se simplificaron. Migración a PostgreSQL planificada para producción.
-
-2. **Código de departamento DIVIPOLA** — Antioquia usa código 01 (oficial DIVIPOLA). Anzá = código 034, Turbo = código 280.
-
-3. **Formato mesa_key** — `{depto}-{municipio}-{zona}-{puesto}-{mesa}` con zero-padding de 3 dígitos para municipio y mesa, 2 dígitos para puesto.
+**Última actualización:** 2026-07-29
+**Estado:** 🟡 PAUSADO — Fases F1-F4 completadas, F5+ pendientes
+**Repositorio:** https://github.com/Nxxo31/e14-fraud-detector.git
+**License:** MIT
 
 ---
 
-## Estado Operativo
+## Proyecto
 
-*Actualizado: 2026-07-02 | Fusionado desde CURRENT_TASK.md (archivo obsoleto)*
+Plataforma de auditoría ciudadana de actas electorales E-14 de Colombia.
+Pipeline multi-capa: ingesta de PDFs → validación aritmética → visión por computador → VLM → comparación oficial vs ciudadano → dashboard público.
+
+**Alcance:** 5-18 actas de muestra (prototipo). Arquitectura escalable a 122K actas.
+
+---
+
+## Stack
+
+| Capa | Tecnología | Estado |
+|------|-----------|--------|
+| Lenguaje | Python 3.14 + venv (`venv/`) | ✅ Operativo |
+| Framework API | FastAPI + uvicorn (puerto 8700) | ✅ Operativo |
+| Parser PDF | PyMuPDF (fitz) | ✅ Operativo |
+| Visión (Capa 1) | OpenCV + numpy | ✅ Operativo |
+| VLM (Capa 2) | NVIDIA NIM (llama-3.2-90b-vision) | ✅ Integrado |
+| DB local | SQLite (`data/e14_audit.db`) | ✅ Operativo |
+| DB producción | Supabase PostgreSQL | ✅ Conectado |
+| OCR | Tesseract | ✅ Integrado |
+| QR/Barcode | pyzbar | ⬜ Pendiente |
+| Frontend/Dashboard | — | ⬜ Pendiente |
+
+---
+
+## Estado de Fases
 
 | Fase | Descripción | Estado | Detalles |
 |------|-------------|--------|----------|
-| F1 | Base de datos PostgreSQL + Supabase | ✅ Completada | 11 tablas, 2 views, triggers, 5 actas migradas |
-| F2 | Capa 0 — validación aritmética | ✅ Completada | 7 discrepancias generadas (excede_total, no_coincide, nivelacion, firmas) |
+| F1 | Base de datos + Supabase | ✅ Completada | 11 tablas, 2 views, triggers, 5 actas migradas |
+| F2 | Capa 0 — validación aritmética | ✅ Completada | 7 discrepancias (excede_total, no_coincide, nivelacion, firmas) |
 | F3 | Cola de slots + workers concurrentes | ✅ Completada | Worker pool paralelo validado, 0 colisiones |
-| F4 | Capa 1 — visión por computador (OpenCV) | ✅ Completada | 3 scores implementados: grosor, separador, tinta. 30 discrepancias tipo 'trazo_anomalo' detectadas |
-| F5 | Capa 2 — VLM dirigido (NVIDIA NIM) | ⬜ Pendiente | Ejecuta prompts sobre celdas con score_capa1 > 0.6 |
+| F4 | Capa 1 — visión por computador (OpenCV) | ✅ Completada | 3 scores: grosor, separador, tinta. 30 discrepancias 'trazo_anomalo' |
+| F5 | Capa 2 — VLM dirigido (NVIDIA NIM) | ✅ Integrado | Batch processing 18 muestras, 0 errores. Pendiente: separar scores > 0.6 |
 | F6 | Ingesta de evidencia ciudadana | ⬜ Pendiente | Endpoint para subir fotos + Capa 1/2 |
-| F7 | Motor comparación oficial vs ciudadano | ⬜ Pendiente | Generar discrepancias de tipo 'discrepancia_oficial_vs_ciudadano' |
+| F7 | Motor comparación oficial vs ciudadano | ⬜ Pendiente | Generar discrepancias 'discrepancia_oficial_vs_ciudadano' |
 | F8 | Flujo de verificación ciudadana (consenso) | ⬜ Pendiente | Endpoint votos + trigger consenso |
 | F9 | Dashboard público (3 vistas) | ⬜ Pendiente | Mapa, mesas legítimas, cola verificación |
 | F10 | Panel admin + exportación impugnaciones | ⬜ Pendiente | Vista admin + PDF exportable |
 
-## Supabase conectado
+---
+
+## Supabase
 
 - **Project:** `oawxinjygprnftkgcjyr` (E-14)
 - **11 tablas + 2 views**
 - **5 actas migradas**
 - **37 discrepancias totales:**
-  - Capa 0 (aritmética): 7 (excede_total, no_coincide, nivelacion, firmas)
-  - Capa 1 (visión): 30 (trazo_anomalo)
+  - Capa 0 (aritmética): 7
+  - Capa 1 (visión): 30
 
 ## Resultados Capa 1 (OpenCV)
 
@@ -95,31 +68,78 @@ Scores por acta (votos_candidato_1):
 - Turbo 002 (trazo_grueso reportado): 0.70 ⚠️
 - Turbo 006 (clean): 0.70 ⚠️
 
-**Limitación conocida:** Las coordenadas de celdas son aproximadas y generan scores de alto nivel incluso en actas limpias. Necesita calibración manual para confirmar precisión real.
+**Limitación conocida:** Las coordenadas de celdas son aproximadas. Los scores actúan como señal de dirección, no como verdad absoluta. Necesita calibración manual para precisión real.
 
 ## Bloqueo: Calibración visual necesaria
 
-Para avanzar a Fase 5 (VLM NIM) necesitamos calibrar las coordenadas exactas de las celdas de votación para cada PDF de muestra, o aceptar que los scores de Capa 1 actúan como señal de dirección (tendencia) más que como verdad absoluta.
+Para avanzar a Fase 5+ (VLM dirigido) necesitamos calibrar las coordenadas exactas de las celdas de votación, o aceptar que los scores de Capa 1 son tendencia.
 
-## Tokens Supabase (guardados en memoria segura)
+---
 
+## Datos de muestra
 
-## Archivos clave creados/modificados
+5 PDFs E-14 en `data/pdf_muestra/`:
 
-- `schema_postgresql.sql` — Schema completo (11 tablas + views + triggers)
-- `migrate_data_supabase.py` — Migración SQLite → Supabase
-- `generate_discrepancias_supabase.py` — Generación de discrepancias Capa 0
+| Archivo | Mesa | Municipio |
+|---------|------|-----------|
+| Anza.pdf | 01-034-01-001-000 | Anzá |
+| Turbo_015.pdf | 01-280-00-000-015 | Turbo |
+| Turbo_001.pdf | 01-280-00-000-001 | Turbo |
+| Turbo_002.pdf | 01-280-00-000-002 | Turbo |
+| Turbo_006.pdf | 01-280-00-000-006 | Turbo |
+
+## Archivos clave
+
+- `schema_sqlite.sql` — Esquema SQLite
+- `schema_postgresql.sql` — Schema completo PostgreSQL (11 tablas + views + triggers)
+- `create_db.py` — Script para crear la base de datos
+- `seed_data.py` — Script para poblar datos de muestra
+- `pipeline_fraude.py` — Orquestador principal del pipeline
 - `fase4/capa1_opencv.py` — Pipeline de visión por computador con OpenCV
-- `SUPABASE_SETUP.md` — Guía de configuración Supabase
+- `fase4/deteccion_dinamica.py` — Detección dinámica de celdas
+- `fase4/ocr_anchor.py` — OCR con anclas
+- `generate_discrepancias_supabase.py` — Generación de discrepancias Capa 0
+- `migrate_data_supabase.py` — Migración SQLite → Supabase
+- `ingestion/` — Servicios de cola, descarga, rate limiting
+- `acquisition/` — Microservicio Docker (routers para PDFs y tablas)
+- `scripts/` — Utilidades (generate_report, validate_pipeline, calibrate_capa1, run_vlm_batch)
+
+## Decisiones de diseño
+
+1. **SQLite para dev, PostgreSQL/Supabase paraprod** — No se pudo instalar PostgreSQL local (requiere sudo). Schema adaptado con tipos SQLite. Migración a PostgreSQL planificada para producción.
+
+2. **Código de departamento DIVIPOLA** — Antioquia = código 01. Anzá = 034, Turbo = 280.
+
+3. **Formato mesa_key** — `{depto}-{municipio}-{zona}-{puesto}-{mesa}` con zero-padding (3 dígitos municipio/mesa, 2 dígitos puesto).
+
+4. **Coordenadas normalizadas (0-1) SIEMPRE** — Coordenadas fijas en píxeles RECHAZADAS.
+
+5. **Capa 1 analiza SOLO firmas** — Nunca números ni texto.
+
+6. **NVIDIA NIM: 3 API keys rotadas** — Límite ~37 req/min.
 
 ---
 
-*Nota: Para actualizar estado operativo, editar esta sección de PROJECT.md directamente.*
+## Reglas críticas
+
+- Coordenadas normalizadas (0-1) SIEMPRE — coordenadas fijas en píxeles RECHAZADAS
+- Capa 1 (OpenCV) analiza SOLO firmas — nunca números ni texto
+- NVIDIA NIM: 3 API keys rotadas, límite ~37 req/min
+- Credenciales Supabase SOLO en variables de entorno — nunca en archivos
+- Commit atómico en español → push inmediato
+
+## Comandos
+
+- API: `./venv/bin/python api/main.py`
+- Pipeline CLI: `./venv/bin/python engine/pipeline.py data/pdf_muestra/Anza.pdf`
+- Instalar deps: `./venv/bin/pip install PyMuPDF opencv-python-headless numpy fastapi uvicorn`
+- Activar venv: `source venv/bin/activate`
 
 ---
 
-## Cross-References (Sister Project)
+## Historial
 
-- **Repo de escala (122K actas):** `../e14-auditoria/` — implementación de producción a escala completa.
-- **Infraestructura de producción (PostgreSQL, Redis, MinIO, Celery):** La arquitectura de la capa de adquisición se ha trasladada a `../e14-auditoria/docs/acquisition-architecture.md` (importado desde `acquisition/ARCHITECTURE.md`). Este repositorio de prototipo concentra resultados de las fases F1-F4 (DB, aritmética, workers, OpenCV) y conserva su propia versión para referencia histórica.
-- **Blueprint completo de implementación:** `../e14-auditoria/docs/archive/MVP-IMPLEMENTATION-BLUEPRINT.md` (archivado; secciones únicas fusionadas en `../e14-auditoria/PROJECT.md`).
+- **2026-07-29:** Fusión de e14-audit-platform y e14-fraud-detector en un único repositorio. Proyecto pausado.
+- **2026-07-02:** Fases F1-F4 completadas, Supabase conectado, 37 discrepancias generadas.
+- **2026-06-29:** Capa 1 OpenCV con detección dinámica y OCR anchor.
+- **2026-06-22:** F1 completada, schema SQLite + PostgreSQL, 5 actas de muestra.
