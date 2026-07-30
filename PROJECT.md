@@ -1,7 +1,7 @@
 # E-14 — Auditoría Ciudadana de Actas E-14 (Colombia)
 
-**Última actualización:** 2026-07-29
-**Estado:** 🟡 PAUSADO — Fases F1-F4 completadas, F5+ pendientes
+**Última actualización:** 2026-07-30
+**Estado:** 🟢 ACTIVO — F5 integrado, avanzando a F6. Limitación de calibración aceptada.
 **Repositorio:** https://github.com/Nxxo31/e14-fraud-detector.git
 **License:** MIT
 
@@ -70,9 +70,12 @@ Scores por acta (votos_candidato_1):
 
 **Limitación conocida:** Las coordenadas de celdas son aproximadas. Los scores actúan como señal de dirección, no como verdad absoluta. Necesita calibración manual para precisión real.
 
-## Bloqueo: Calibración visual necesaria
+## Bloqueo resuelto: Calibración visual — Decisión 2026-07-30
 
-Para avanzar a Fase 5+ (VLM dirigido) necesitamos calibrar las coordenadas exactas de las celdas de votación, o aceptar que los scores de Capa 1 son tendencia.
+**Decisión:** Aceptar los scores de Capa 1 como señal de dirección, no como verdad absoluta.
+La limitación de coordenadas aproximadas está documentada y no bloquea F6+.
+Los scores de Capa 1 (grosor, separador, tinta) funcionan como heurística de priorización
+para el VLM (Capa 2), no como evidencia definitiva. Avanzar a F6 (ingesta ciudadana).
 
 ---
 

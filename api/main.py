@@ -17,6 +17,9 @@ import uvicorn
 
 from api.database import init_db, upsert_acta, get_all_actas, get_acta, update_veredicto, get_stats
 
+# F6 — Router de evidencia ciudadana
+from api.upload_endpoint import router as evidence_router
+
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -25,6 +28,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="E14 Audit Platform API", version="2.0.0", lifespan=lifespan)
+
+# F6 — Montar router de evidencia ciudadana
+app.include_router(evidence_router)
 
 # CORS para el dashboard
 app.add_middleware(
@@ -302,6 +308,8 @@ if __name__ == "__main__":
     print("  GET  /celdas/{id}       — Celdas del acta")
     print("  GET  /dashboard/stats   — Estadísticas")
     print("  GET  /dashboard         — Dashboard HTML")
+    print("  POST /api/evidence/upload — F6: Subir foto de evidencia ciudadana")
+    print("  GET  /api/evidence/health  — F6: Health check de evidencia")
     print("=" * 60 + "\n")
 
     uvicorn.run(app, host="0.0.0.0", port=8700)
