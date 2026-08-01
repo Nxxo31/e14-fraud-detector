@@ -36,7 +36,7 @@ Auditoría forense ciudadana de actas electorales E-14 de Colombia mediante un p
 | DB local | SQLite (`data/e14_audit.db`) | bundled | Dev/testing — 11 tablas + 2 views + triggers |
 | DB producción | Supabase PostgreSQL | — | 5 actas migradas, prod-readiness |
 | Container | Docker (acquisition/) | latest | Microservicio para PDFs y tablas |
-| QR/Barcode | pyzbar | latest | Pendiente — extracción de QR |
+| QR/Barcode | pyzbar | 0.1.9 | ✅ Decodificación QR + 1D (CODE39/EAN13) — coord. normalizadas |
 | Frontend | — | — | Dashboard pendiente |
 
 ### Diagrama de Arquitectura
@@ -122,7 +122,7 @@ Coordenadas siempre normalizadas (0-1) — nunca en píxeles fijos. Capa 1 anali
 | R-14 | F9 Dashboard público (3 vistas) | — | ⏳ | Pendiente — mapa, mesas legítimas, cola |
 | R-15 | F10 Panel admin + exportación impugnaciones | — | ⏳ | Pendiente — PDF exportable |
 | R-16 | F7 VLM workers (dedicated, concurrent batches) | — | ⏳ | Issue #1 — pendiente |
-| R-17 | pyzbar QR/Barcode extraction | — | ⏳ | Pendiente |
+| R-17 | pyzbar QR/Barcode extraction | `engine/analyze/qr_barcode.py` | ✅ | Decodifica QR+CODE39 en 5 PDFs muestra, bbox normalizadas, integra pipeline |
 | R-18 | Dashboard front-end | — | ⏳ | Pendiente |
 | R-19 | Calibración manual de coordenadas | `scripts/calibrate_capa1.py` | ⚠️ | Limitación aceptada: scores como señal de dirección, no verdad absoluta |
 
@@ -196,7 +196,7 @@ Decisión 2026-07-30: los scores de Capa 1 son señales de dirección (priorizac
 | B-3 | F8 Flujo verificación ciudadana (consenso) | Media | #3 |
 | B-4 | F9 Dashboard público (3 vistas: mapa, mesas legítimas, cola) | Media | #4 |
 | B-5 | F10 Panel admin + exportación impugnaciones PDF | Media | #5 |
-| B-6 | pyzbar QR/Barcode extraction | Baja | #6 |
+| B-6 | pyzbar QR/Barcode extraction | ✅ Done | #6 |
 | B-7 | Calibración precisa de coords (post-f6+) | Baja | #7 |
 
 ---

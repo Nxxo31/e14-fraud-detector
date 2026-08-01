@@ -25,6 +25,7 @@ pymupdf>=1.24.0
 Pillow>=10.3.0
 numpy>=1.26.0
 opencv-python>=4.9.0.80
+pyzbar>=0.1.9  # QR/barcode detection (R-17/B-6) — requires system libzbar0
 
 # OCR (primary engine)
 paddleocr>=2.8.0
