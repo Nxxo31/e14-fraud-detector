@@ -18,6 +18,7 @@ from engine.segment.layout_detector import LayoutDetector
 from engine.segment.cell_extractor import CellExtractor
 from engine.analyze.arithmetical import validate_arithmetical
 from engine.analyze.visual_anomaly import analyze_all_cells_visual
+from engine.analyze.qr_barcode import detect_qr_barcode_all_pages, is_available as qr_is_available
 from engine.forensic.rules_engine import classify_acta
 
 
@@ -53,6 +54,9 @@ class E14AnalysisPipeline:
         import numpy as np
 
         pdf_path = Path(pdf_path)
+        # mesa_key se define al inicio — lo usa la detección QR (step 6.6) para
+        # validar coincidencia, y el resultado final (step 9) lo reutiliza.
+        mesa_key = pdf_path.stem
 
         # 1. Renderizar PDF → PNG
         metadata = self.renderer.get_metadata(pdf_path)
@@ -122,6 +126,28 @@ class E14AnalysisPipeline:
         except Exception:
             ocr_resultados = []  # OCR no disponible, continuar sin
 
+        # 6.6 QR/barcode (R-17, B-6) — pyzbar sobre todas las páginas renderizadas
+        # El QR E-14 vive en la esquina superior del acta; se decodifica sobre cada
+        # página renderizada. Las coordenadas de bbox salen SIEMPRE normalizadas (0-1).
+        # Sin pyzbar → la sección se reporta como no-disponible sin abortar el pipeline.
+        # mesa_key se define al inicio del análisis (step 0) para validar el QR.
+        qr_result: Dict[str, Any] = {"available": qr_is_available(), "pages": [], "total_symbols": 0}
+        try:
+            page_images_qr = [cv2.imread(str(p)) for p in image_paths]
+            # Filtrar imágenes que no se cargaron (None) para no romper el detector
+            page_images_qr = [img for img in page_images_qr if img is not None]
+            if page_images_qr:
+                qr_result = detect_qr_barcode_all_pages(
+                    page_images_qr, expected_mesa_key=mesa_key
+                )
+        except Exception:
+            qr_result = {
+                "available": qr_is_available(),
+                "error": "qr_detection_failed",
+                "pages": [],
+                "total_symbols": 0,
+            }
+
         # 7. Clasificación forense
         forensic = classify_acta(
             score_arithmetical=arith_result["score"],
@@ -151,8 +177,7 @@ class E14AnalysisPipeline:
                 cell_out["image_base64"] = base64.b64encode(buffer).decode("utf-8")
             cells_output.append(cell_out)
 
-        # 9. Extraer mesa_key del filename
-        mesa_key = pdf_path.stem
+        # 9. mesa_key ya definido al inicio del análisis (step 0).
 
         result = {
             "mesa_key": mesa_key,
@@ -178,6 +203,17 @@ class E14AnalysisPipeline:
             "ocr": {
                 "resultados": ocr_resultados,
                 "tesseract_disponible": len(ocr_resultados) > 0
+            },
+            "qr_barcode": {
+                "available": qr_result.get("available", False),
+                "total_symbols": qr_result.get("total_symbols", 0),
+                "qr_raw_value": qr_result.get("qr_raw_value"),
+                "qr_decoded_match": qr_result.get("qr_decoded_match"),
+                "discrepancia_qr": qr_result.get("discrepancia_qr", False),
+                "discrepancia_razon": qr_result.get("discrepancia_razon"),
+                "discrepancias": qr_result.get("discrepancias", []),
+                "pages": qr_result.get("pages", []),
+                "pyzbar_version": "0.1.9",
             }
         }
 
