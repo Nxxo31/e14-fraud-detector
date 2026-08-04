@@ -22,15 +22,34 @@ from api.upload_endpoint import router as evidence_router
 
 from contextlib import asynccontextmanager
 
+# F7 — Router de comparación oficial vs ciudadano + VLM workers
+from api.comparison_router import router as comparison_router
+
+# F8 — Router de verificación ciudadana y consenso democrático
+from api.verification_router import router as verification_router
+
+# F8 — Inicializar tablas de consenso y configuración
+from api.consensus_db import _ensure_tables, _get_db as _get_consensus_db
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    # F8 — Asegurar tablas de discrepancias, votos y configuración
+    conn_consensus = _get_consensus_db()
+    _ensure_tables(conn_consensus)
+    conn_consensus.close()
     yield
 
-app = FastAPI(title="E14 Audit Platform API", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="E14 Audit Platform API", version="3.0.0", lifespan=lifespan)
 
 # F6 — Montar router de evidencia ciudadana
 app.include_router(evidence_router)
+
+# F7 — Montar router de comparación + VLM workers
+app.include_router(comparison_router)
+
+# F8 — Montar router de verificación ciudadana
+app.include_router(verification_router)
 
 # CORS para el dashboard
 app.add_middleware(
@@ -297,19 +316,36 @@ def exportar_actas(formato: str = Query("json", description="Formato: json o csv
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
-    print("E14 AUDIT PLATFORM — MVC API v2.0")
+    print("E14 AUDIT PLATFORM — MVC API v3.0")
     print("=" * 60)
     print("Endpoints:")
-    print("  GET  /                  — Health check")
-    print("  GET  /actas             — Listar actas")
-    print("  POST /actas/analizar    — Subir y analizar PDF")
-    print("  GET  /actas/{id}        — Detalle de acta")
-    print("  PUT  /actas/{id}/veredicto — Actualizar veredicto")
-    print("  GET  /celdas/{id}       — Celdas del acta")
-    print("  GET  /dashboard/stats   — Estadísticas")
-    print("  GET  /dashboard         — Dashboard HTML")
-    print("  POST /api/evidence/upload — F6: Subir foto de evidencia ciudadana")
-    print("  GET  /api/evidence/health  — F6: Health check de evidencia")
+    print("  GET  /                          — Health check")
+    print("  GET  /actas                     — Listar actas")
+    print("  POST /actas/analizar            — Subir y analizar PDF")
+    print("  GET  /actas/{id}                — Detalle de acta")
+    print("  PUT  /actas/{id}/veredicto      — Actualizar veredicto")
+    print("  GET  /celdas/{id}               — Celdas del acta")
+    print("  GET  /dashboard/stats           — Estadísticas")
+    print("  GET  /dashboard                 — Dashboard HTML")
+    print()
+    print("  F6 — Evidencia Ciudadana:")
+    print("  POST /api/evidence/upload       — Subir foto de evidencia")
+    print("  GET  /api/evidence/health        — Health check de evidencia")
+    print()
+    print("  F7 — Comparación Oficial vs Ciudadano + VLM Workers:")
+    print("  POST /api/comparison/run/{mesa_key}    — Comparar una mesa")
+    print("  POST /api/comparison/run-batch         — Comparar todas las mesas")
+    print("  GET  /api/comparison/discrepancies     — Listar discrepancias")
+    print("  POST /api/vlm/workers/run             — Lanzar VLM workers")
+    print("  GET  /api/vlm/workers/status          — Estado de cola VLM")
+    print()
+    print("  F8 — Verificación Ciudadana y Consenso:")
+    print("  POST /api/verification/vote                   — Registrar voto")
+    print("  GET  /api/verification/discrepancy/{id}       — Estado de discrepancia")
+    print("  GET  /api/verification/pending                — Cola de discrepancias")
+    print("  GET  /api/verification/summary                — Resumen de consenso")
+    print("  GET  /api/verification/config                — Ver umbrales")
+    print("  PUT  /api/verification/config                — Actualizar umbrales (admin)")
     print("=" * 60 + "\n")
 
     uvicorn.run(app, host="0.0.0.0", port=8700)
