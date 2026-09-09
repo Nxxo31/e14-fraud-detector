@@ -1,0 +1,226 @@
+# E14 Audit Platform — Full Docker Compose
+
+version: '3.8'
+
+services:
+  # ══════════════════════════════════════════════════════════════════════════
+  # ACQUISITION SERVICE
+  # ══════════════════════════════════════════════════════════════════════════
+  acquisition-api:
+    build:
+      context: ../acquisition
+      dockerfile: Dockerfile
+    container_name: e14-acquisition-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://e14user:***@db:5432/e14acquisition
+      - REDIS_URL=redis://:redispass@redis:6379/0
+      - CELERY_BROKER_URL=redis://:redispass@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:redispass@redis:6379/1
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=***      - E14_CDN_BASE_URL=https://divulgacione14presidente.registraduria.gov.co
+      - E14_RATE_LIMIT=8.0
+      - E14_MAX_CONCURRENT=6
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  acquisition-worker:
+    build:
+      context: ../acquisition
+      dockerfile: Dockerfile
+    container_name: e14-acquisition-worker
+    command: celery -A worker.celery_app worker --loglevel=info --concurrency=6
+    environment:
+      - DATABASE_URL=postgresql://e14user:***@db:5432/e14acquisition
+      - REDIS_URL=redis://:redispass@redis:6379/0
+      - CELERY_BROKER_URL=redis://:redispass@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:redispass@redis:6379/1
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=***      - E14_CDN_BASE_URL=https://divulgacione14presidente.registraduria.gov.co
+      - E14_RATE_LIMIT=8.0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+
+  acquisition-beat:
+    build:
+      context: ../acquisition
+      dockerfile: Dockerfile
+    container_name: e14-acquisition-beat
+    command: celery -A worker.celery_app beat --loglevel=info --scheduler=celery.beat.PersistentScheduler
+    environment:
+      - DATABASE_URL=postgresql://e14user:***@db:5432/e14acquisition
+      - REDIS_URL=redis://:redispass@redis:6379/0
+      - CELERY_BROKER_URL=redis://:redispass@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:redispass@redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # ANALYSIS SERVICE
+  # ══════════════════════════════════════════════════════════════════════════
+  analysis-api:
+    build:
+      context: ../analysis
+      dockerfile: Dockerfile
+    container_name: e14-analysis-api
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql://e14user:***@db:5432/e14acquisition
+      - REDIS_URL=redis://:redispass@redis:6379/0
+      - CELERY_BROKER_URL=redis://:redispass@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:redispass@redis:6379/2
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=***      - E14_RENDER_DPI=300
+      - E14_OCR_USE_GPU=0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  analysis-worker:
+    build:
+      context: ../analysis
+      dockerfile: Dockerfile
+    container_name: e14-analysis-worker
+    command: celery -A worker.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - DATABASE_URL=postgresql://e14user:***@db:5432/e14acquisition
+      - REDIS_URL=redis://:redispass@redis:6379/0
+      - CELERY_BROKER_URL=redis://:redispass@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:redispass@redis:6379/2
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=***      - E14_RENDER_DPI=300
+      - E14_OCR_USE_GPU=0
+      - OPENBLAS_NUM_THREADS=1
+      - OMP_NUM_THREADS=1
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # INFRASTRUCTURE
+  # ══════════════════════════════════════════════════════════════════════════
+  db:
+    image: postgres:15-alpine
+    container_name: e14-db
+    environment:
+      - POSTGRES_USER=e14user
+      - POSTGRES_PASSWORD=***    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e14user -d e14acquisition"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: e14-redis
+    command: redis-server --requirepass redispass --maxmemory 1gb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redispass", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: e14-minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=***    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # MONITORING
+  # ══════════════════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: e14-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - promdata:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: e14-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=***    volumes:
+      - grafanadata:/var/lib/grafana
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  miniodata:
+  promdata:
+  grafanadata:

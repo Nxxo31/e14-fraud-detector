@@ -1,0 +1,28 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+redis==5.2.0
+celery==5.4.0
+httpx==0.28.1
+pydantic==2.10.5
+python-multipart==0.0.20
+python-dotenv==1.0.1
+
+# HTTP client with TLS impersonation
+curl-cffi==0.9.1
+
+# MinIO S3-compatible storage
+minio==7.2.10
+
+# Prometheus metrics
+prometheus-client==0.21.0
+
+# Structured logging
+structlog==25.1.0
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+httpx==0.28.1
