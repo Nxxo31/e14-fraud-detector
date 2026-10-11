@@ -239,3 +239,21 @@ Decisión 2026-07-30: los scores de Capa 1 son señales de dirección (priorizac
 ---
 
 *Generado por SophIA — Sebastian Velasco's autonomous operating system*
+
+## Estado de pausa (2026-10-11)
+
+  El proyecto está pausado desde 2026-07-01 (v0.2.1). El detalle de
+  reanudación está en `PAUSED.md`. Sophia confirma la pausa en esta
+  auditoría (memo #186): el proyecto queda en estado funcional pero
+  inactivo hasta que el operador:
+
+  1. Disponga de datos de suelo (ground truth) para calibración, o
+  2. Priorice el sistema para un proceso electoral, o
+  3. Decida integrar dashboard/frontend.
+
+  Mientras tanto: NO se crea trabajo nuevo sobre este repo. El equipo
+  puede retomar siguiendo la guía de `PAUSED.md`.
+
+---
+
+*Estado de pausa confirmado por SophIA el 2026-10-11 (memo #186).*
